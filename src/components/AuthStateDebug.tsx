@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/SimpleAuthContext';
 
 const AuthStateDebug: React.FC = () => {
   const { user, session, isLoading, isAuthenticated } = useAuth();

@@ -14,7 +14,7 @@ import { RootStackParamList, MainTabParamList } from './src/types/navigation';
 import './src/i18n';
 
 // Import contexts
-import { AuthProvider, useAuth } from './src/context/AuthContext';
+import { AuthProvider, useAuth } from './src/context/SimpleAuthContext';
 
 // Import screens
 import LoginScreen from './src/screens/auth/LoginScreen';
@@ -38,7 +38,7 @@ const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 const MainTabs = () => {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { t } = useTranslation();
 
   return (
@@ -50,6 +50,9 @@ const MainTabs = () => {
         tabBarActiveTintColor: '#007AFF',
         tabBarInactiveTintColor: 'gray',
         headerShown: false,
+        tabBarStyle: {
+          backgroundColor: '#fff',
+        },
       })}
     >
       <Tab.Screen 
@@ -57,26 +60,40 @@ const MainTabs = () => {
         component={HomeScreen} 
         options={{ tabBarLabel: t('navigation.home') }}
       />
-      <Tab.Screen 
-        name="History" 
-        component={HistoryScreen} 
-        options={{ tabBarLabel: t('navigation.history') }}
-      />
-      <Tab.Screen 
-        name="Notifications" 
-        component={NotificationsScreen} 
-        options={{ tabBarLabel: t('navigation.notifications') }}
-      />
-      <Tab.Screen 
-        name="Profile" 
-        component={ProfileScreen} 
-        options={{ tabBarLabel: t('navigation.profile') }}
-      />
-      {user?.role === 'admin' && (
+      
+      {/* Only show these tabs if user is authenticated */}
+      {isAuthenticated ? (
+        <>
+          <Tab.Screen 
+            name="History" 
+            component={HistoryScreen} 
+            options={{ tabBarLabel: t('navigation.history') }}
+          />
+          <Tab.Screen 
+            name="Notifications" 
+            component={NotificationsScreen} 
+            options={{ tabBarLabel: t('navigation.notifications') }}
+          />
+          <Tab.Screen 
+            name="Profile" 
+            component={ProfileScreen} 
+            options={{ tabBarLabel: t('navigation.profile') }}
+          />
+          {/* Debug admin access */}
+          {console.log('🔍 User role check:', user?.role, 'isAdmin:', user?.role === 'admin')}
+          {user?.role === 'admin' && (
+            <Tab.Screen 
+              name="Admin" 
+              component={AdminScreen} 
+              options={{ tabBarLabel: t('navigation.admin') }}
+            />
+          )}
+        </>
+      ) : (
         <Tab.Screen 
-          name="Admin" 
-          component={AdminScreen} 
-          options={{ tabBarLabel: t('navigation.admin') }}
+          name="Profile" 
+          component={ProfileScreen} 
+          options={{ tabBarLabel: t('navigation.profile') }}
         />
       )}
     </Tab.Navigator>
@@ -84,7 +101,7 @@ const MainTabs = () => {
 };
 
 const AppNavigator = () => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isLoading } = useAuth();
 
   if (isLoading) {
     return <LoadingScreen />;
@@ -93,20 +110,38 @@ const AppNavigator = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {!isAuthenticated ? (
-          <>
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="Register" component={RegisterScreen} />
-          </>
-        ) : (
-          <>
-            <Stack.Screen name="MainTabs" component={MainTabs} />
-            <Stack.Screen name="BikeDetail" component={BikeDetailScreen} />
-            <Stack.Screen name="BookingDetail" component={BookingDetailScreen} />
-            <Stack.Screen name="BookingDetailView" component={BookingDetailViewScreen} />
-            <Stack.Screen name="Settings" component={SettingsScreen} />
-          </>
-        )}
+        {/* Main app screens - accessible without authentication */}
+        <Stack.Screen name="MainTabs" component={MainTabs} />
+        <Stack.Screen name="BikeDetail" component={BikeDetailScreen} />
+        <Stack.Screen name="BookingDetail" component={BookingDetailScreen} />
+        <Stack.Screen name="BookingDetailView" component={BookingDetailViewScreen} />
+        <Stack.Screen name="Settings" component={SettingsScreen} />
+        
+        {/* Auth screens - shown when user needs to login */}
+        <Stack.Screen 
+          name="Login" 
+          component={LoginScreen}
+          options={{ 
+            presentation: 'modal',
+            headerShown: true,
+            title: 'Đăng nhập',
+            headerTitleAlign: 'center',
+            gestureEnabled: true,
+            headerLeft: () => null, // Remove back button to prevent navigation issues
+          }}
+        />
+        <Stack.Screen 
+          name="Register" 
+          component={RegisterScreen}
+          options={{ 
+            presentation: 'modal',
+            headerShown: true,
+            title: 'Đăng ký',
+            headerTitleAlign: 'center',
+            gestureEnabled: true,
+            headerLeft: () => null,
+          }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

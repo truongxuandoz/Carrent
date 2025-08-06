@@ -10,16 +10,18 @@ import {
   Platform,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/SimpleAuthContext';
+import LoadingOverlay from '../../components/LoadingOverlay';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../../types/navigation';
+import { validateRegistrationData } from '../../utils/errorHandler';
 
 type RegisterScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 
 const RegisterScreen: React.FC = () => {
   const { t } = useTranslation();
-  const { register } = useAuth();
+  const { register, operationLoading } = useAuth();
   const navigation = useNavigation<RegisterScreenNavigationProp>();
   
   const [email, setEmail] = useState('');
@@ -27,53 +29,77 @@ const RegisterScreen: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleRegister = async () => {
-    if (!email || !password || !confirmPassword || !fullName || !phoneNumber) {
-      Alert.alert(t('common.error'), 'Please fill in all fields');
+    // Validate registration data
+    const validation = validateRegistrationData({
+      email: email.trim(),
+      password,
+      confirmPassword,
+      fullName: fullName.trim(),
+      phoneNumber: phoneNumber.trim(),
+    });
+
+    if (!validation.isValid) {
+      Alert.alert(
+        t('common.error'), 
+        validation.errorKey ? t(validation.errorKey) : validation.errorMessage
+      );
       return;
     }
 
-    if (password !== confirmPassword) {
-      Alert.alert(t('common.error'), t('auth.passwordMismatch'));
-      return;
-    }
-
-    setIsLoading(true);
     try {
       const result = await register({
-        email,
+        email: email.trim(),
         password,
-        fullName,
-        phoneNumber,
+        fullName: fullName.trim(),
+        phoneNumber: phoneNumber.trim(),
       });
       
       if (!result.success) {
         Alert.alert(
           t('common.error'), 
-          result.error || 'Registration failed'
+          result.errorKey ? t(result.errorKey) : result.error || t('auth.registrationFailed')
         );
       } else if (result.error) {
-        // Success but with message (like email confirmation)
+        // Success but with message (like email confirmation required)
+        console.log('✅ Registration successful but needs email confirmation');
         Alert.alert(
-          '✅ Success', 
-          result.error, // This contains the email confirmation message
-          [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
+          t('common.success'), 
+          result.errorKey ? t(result.errorKey) : result.error,
+          [{ 
+            text: t('common.ok'), 
+            onPress: () => {
+              console.log('✅ Email confirmation message acknowledged - returning to home');
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'MainTabs' }],
+              });
+            }
+          }]
         );
       } else {
-        // Complete success
+        // Complete success - user is automatically logged in (no email confirmation needed)
+        console.log('✅ Registration completed successfully - auto logged in');
+        
+        // Show brief success message and auto-dismiss for better UX
         Alert.alert(
-          '✅ Success', 
-          'Registration successful!',
-          [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
+          t('common.success'), 
+          t('auth.registerSuccess') + ' ' + t('auth.autoLoggedIn')
         );
+        
+        // Automatically go back after showing success message
+        setTimeout(() => {
+          console.log('✅ Auto-dismissing registration modal - returning to home as logged user');
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'MainTabs' }],
+          });
+        }, 2000); // 2 second delay to show success message
       }
     } catch (error) {
       console.error('Registration error:', error);
-      Alert.alert(t('common.error'), 'An unexpected error occurred');
-    } finally {
-      setIsLoading(false);
+      Alert.alert(t('common.error'), t('auth.unknownError'));
     }
   };
 
@@ -140,12 +166,12 @@ const RegisterScreen: React.FC = () => {
           />
 
           <TouchableOpacity
-            style={[styles.button, isLoading && styles.buttonDisabled]}
+            style={[styles.button, operationLoading && styles.buttonDisabled]}
             onPress={handleRegister}
-            disabled={isLoading}
+            disabled={operationLoading}
           >
             <Text style={styles.buttonText}>
-              {isLoading ? t('common.loading') : t('auth.register')}
+              {operationLoading ? t('common.loading') : t('auth.register')}
             </Text>
           </TouchableOpacity>
 
@@ -156,6 +182,12 @@ const RegisterScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
       </View>
+      
+      <LoadingOverlay
+        visible={operationLoading}
+        text={t('auth.creatingAccount', 'Creating account...')}
+        style="overlay"
+      />
     </KeyboardAvoidingView>
   );
 };

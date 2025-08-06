@@ -10,18 +10,18 @@ import {
   StatusBar 
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/SimpleAuthContext';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../types/navigation';
 import { Ionicons } from '@expo/vector-icons';
-import BasicTest from '../components/BasicTest';
+import LoadingOverlay from '../components/LoadingOverlay';
 
 type ProfileScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 
 const ProfileScreen: React.FC = () => {
   const { t, i18n } = useTranslation();
-  const { user, logout, isLoading } = useAuth();
+  const { user, logout, isLoading, operationLoading, isAuthenticated } = useAuth();
   const navigation = useNavigation<ProfileScreenNavigationProp>();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -158,6 +158,37 @@ const ProfileScreen: React.FC = () => {
     return `${month} ${year}`;
   };
 
+  // Show login prompt for non-authenticated users
+  if (!isAuthenticated) {
+    return (
+      <View style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+        
+        <View style={styles.notAuthenticatedContainer}>
+          <View style={styles.loginPrompt}>
+            <Ionicons name="person-circle-outline" size={80} color="#C7C7CC" />
+            <Text style={styles.loginPromptTitle}>{t('auth.loginRequired')}</Text>
+            <Text style={styles.loginPromptSubtitle}>{t('profile.loginToViewProfile')}</Text>
+            
+            <TouchableOpacity 
+              style={styles.loginPromptButton}
+              onPress={() => navigation.navigate('Login')}
+            >
+              <Text style={styles.loginPromptButtonText}>{t('auth.login')}</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.registerPromptButton}
+              onPress={() => navigation.navigate('Register')}
+            >
+              <Text style={styles.registerPromptButtonText}>{t('auth.register')}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
@@ -238,8 +269,7 @@ const ProfileScreen: React.FC = () => {
         ))}
       </View>
 
-      {/* Basic Test Component */}
-      <BasicTest />
+
 
       {/* App Info */}
       <View style={styles.appInfo}>
@@ -264,6 +294,12 @@ const ProfileScreen: React.FC = () => {
           )}
         </TouchableOpacity>
       </View>
+      
+      <LoadingOverlay
+        visible={operationLoading || isLoggingOut}
+        text={isLoggingOut ? t('profile.loggingOut', 'Logging out...') : t('common.loading', 'Loading...')}
+        style="overlay"
+      />
     </ScrollView>
   );
 };
@@ -435,6 +471,70 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FF3B30',
     marginLeft: 8,
+  },
+  notAuthenticatedContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+    backgroundColor: '#f8f9fa',
+  },
+  loginPrompt: {
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: 40,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
+    width: '100%',
+    maxWidth: 320,
+  },
+  loginPromptTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 20,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  loginPromptSubtitle: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 30,
+    lineHeight: 22,
+  },
+  loginPromptButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 40,
+    paddingVertical: 15,
+    borderRadius: 25,
+    marginBottom: 15,
+    width: '100%',
+  },
+  loginPromptButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  registerPromptButton: {
+    backgroundColor: 'transparent',
+    paddingHorizontal: 40,
+    paddingVertical: 15,
+    borderRadius: 25,
+    borderWidth: 2,
+    borderColor: '#007AFF',
+    width: '100%',
+  },
+  registerPromptButtonText: {
+    color: '#007AFF',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });
 

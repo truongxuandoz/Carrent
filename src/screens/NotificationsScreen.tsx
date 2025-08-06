@@ -13,7 +13,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../types/navigation';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/SimpleAuthContext';
 import { notificationService } from '../services/notificationService';
 
 type NotificationsScreenNavigationProp = StackNavigationProp<RootStackParamList>;

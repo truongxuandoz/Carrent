@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  StatusBar,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
@@ -13,17 +14,20 @@ import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList, MainTabParamList } from '../types/navigation';
-// Debug component removed for production
+import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../context/SimpleAuthContext';
 
 type HomeScreenNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList, 'Home'>,
   StackNavigationProp<RootStackParamList>
 >;
 import QuickBookingBox from '../components/QuickBookingBox';
+import AdminDebugger from '../components/AdminDebugger';
 
 const HomeScreen: React.FC = () => {
   const { t } = useTranslation();
   const navigation = useNavigation<HomeScreenNavigationProp>();
+  const { user, isAuthenticated } = useAuth();
 
   const mockBikes = [
     {
@@ -58,14 +62,46 @@ const HomeScreen: React.FC = () => {
     });
   };
 
+  const handleAuthPress = () => {
+    if (isAuthenticated) {
+      navigation.navigate('Profile');
+    } else {
+      navigation.navigate('Login');
+    }
+  };
+
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.welcomeText}>{t('home.welcome')}</Text>
-        <Text style={styles.subtitleText}>{t('home.findYourBike')}</Text>
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      
+      {/* Header with Login/Profile Button */}
+      <View style={styles.topHeader}>
+        <View style={styles.headerLeft}>
+          <Text style={styles.welcomeText}>
+            {isAuthenticated ? `${t('home.welcomeBack')}, ${user?.fullName}` : t('home.welcome')}
+          </Text>
+          <Text style={styles.subtitleText}>{t('home.findYourBike')}</Text>
+        </View>
+        <TouchableOpacity style={styles.authButton} onPress={handleAuthPress}>
+          {isAuthenticated ? (
+            <View style={styles.profileButton}>
+              <Ionicons name="person-circle" size={32} color="#007AFF" />
+            </View>
+          ) : (
+            <View style={styles.loginButton}>
+              <Ionicons name="log-in" size={20} color="#fff" />
+              <Text style={styles.loginButtonText}>{t('auth.login')}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
       </View>
 
+      <ScrollView style={styles.scrollContainer}>
+
               {/* Debug component removed for clean UI */}
+
+      {/* Admin Debug (temporary) */}
+      {__DEV__ && <AdminDebugger />}
 
       {/* Quick Booking Box */}
       <QuickBookingBox />
@@ -144,7 +180,8 @@ const HomeScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
       </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 };
 
@@ -152,6 +189,46 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  topHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#fff',
+    paddingTop: 60,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  authButton: {
+    marginLeft: 15,
+  },
+  loginButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  loginButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 5,
+  },
+  profileButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scrollContainer: {
+    flex: 1,
   },
   header: {
     padding: 20,

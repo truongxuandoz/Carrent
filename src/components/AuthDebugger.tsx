@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
 import { supabase } from '../config/supabase';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/SimpleAuthContext';
 
 const AuthDebugger: React.FC = () => {
   const [status, setStatus] = useState('Ready to debug');

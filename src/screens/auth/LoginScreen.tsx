@@ -10,39 +10,51 @@ import {
   Platform,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../../context/AuthContext';
-// Debug components removed for production
+import { useAuth } from '../../context/SimpleAuthContext';
+import LoadingOverlay from '../../components/LoadingOverlay';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../../types/navigation';
+import { isValidEmail } from '../../utils/errorHandler';
 
 type LoginScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 
 const LoginScreen: React.FC = () => {
   const { t } = useTranslation();
-  const { login } = useAuth();
+  const { login, operationLoading } = useAuth();
   const navigation = useNavigation<LoginScreenNavigationProp>();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert(t('common.error'), 'Please fill in all fields');
+    if (!email.trim() || !password) {
+      Alert.alert(t('common.error'), t('auth.fillAllFields'));
       return;
     }
 
-    setIsLoading(true);
+    if (!isValidEmail(email.trim())) {
+      Alert.alert(t('common.error'), t('auth.invalidEmailFormat'));
+      return;
+    }
+
     try {
-      const result = await login(email, password);
+      const result = await login(email.trim(), password);
       if (!result.success) {
-        Alert.alert(t('common.error'), result.error || 'Invalid email or password');
+        Alert.alert(
+          t('common.error'), 
+          result.errorKey ? t(result.errorKey) : result.error || t('auth.invalidCredentials')
+        );
+      } else {
+        // Login successful - dismiss modal and go back to main app
+        console.log('✅ Login successful - navigating to home');
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'MainTabs' }],
+        });
       }
     } catch (error) {
-      Alert.alert(t('common.error'), 'Login failed');
-    } finally {
-      setIsLoading(false);
+      Alert.alert(t('common.error'), t('auth.loginFailed'));
     }
   };
 
@@ -83,12 +95,12 @@ const LoginScreen: React.FC = () => {
           />
 
           <TouchableOpacity
-            style={[styles.button, isLoading && styles.buttonDisabled]}
+            style={[styles.button, operationLoading && styles.buttonDisabled]}
             onPress={handleLogin}
-            disabled={isLoading}
+            disabled={operationLoading}
           >
             <Text style={styles.buttonText}>
-              {isLoading ? t('common.loading') : t('auth.login')}
+              {operationLoading ? t('common.loading') : t('auth.login')}
             </Text>
           </TouchableOpacity>
 
@@ -99,6 +111,12 @@ const LoginScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
       </View>
+      
+      <LoadingOverlay
+        visible={operationLoading}
+        text={t('auth.signingIn', 'Signing in...')}
+        style="overlay"
+      />
     </KeyboardAvoidingView>
   );
 };

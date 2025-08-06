@@ -6,14 +6,17 @@ import {
   TouchableOpacity,
   Modal,
   TextInput,
+  Alert,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useAuth } from '../context/SimpleAuthContext';
 
 const QuickBookingBox: React.FC = () => {
   const { t } = useTranslation();
   const navigation = useNavigation();
+  const { isAuthenticated } = useAuth();
   
   const [showModal, setShowModal] = useState(false);
   const [startDate, setStartDate] = useState(new Date());
@@ -21,6 +24,24 @@ const QuickBookingBox: React.FC = () => {
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
   const [location, setLocation] = useState('');
+
+  const handleBookNowPress = () => {
+    if (!isAuthenticated) {
+      Alert.alert(
+        t('auth.loginRequired'),
+        t('auth.loginRequiredMessage'),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          { 
+            text: t('auth.login'), 
+            onPress: () => navigation.navigate('Login' as never)
+          }
+        ]
+      );
+      return;
+    }
+    setShowModal(true);
+  };
 
   const handleQuickBook = () => {
     // For now, just close modal and could navigate to a search page later
@@ -36,7 +57,7 @@ const QuickBookingBox: React.FC = () => {
         <Text style={styles.quickBookTitle}>{t('home.quickBooking')}</Text>
         <Text style={styles.quickBookSubtitle}>{t('home.selectDates')}</Text>
         
-        <TouchableOpacity style={styles.quickBookButton} onPress={() => setShowModal(true)}>
+        <TouchableOpacity style={styles.quickBookButton} onPress={handleBookNowPress}>
           <Text style={styles.quickBookButtonText}>{t('home.bookNow')}</Text>
         </TouchableOpacity>
       </View>
