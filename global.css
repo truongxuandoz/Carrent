@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global Font Configuration */
+* {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+}
+
+/* Monospace font for prices and code */
+.font-mono {
+  font-family: 'SF Mono', Monaco, Inconsolata, 'Roboto Mono', 'Source Code Pro', monospace;
+}
+
+/* Text styles matching Typography theme */
+.text-h1 {
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 34px;
+}
+
+.text-h2 {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 27px;
+}
+
+.text-h3 {
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 22px;
+}
+
+.text-body {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 22px;
+}
+
+.text-body-medium {
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 22px;
+}
+
+.text-caption {
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 16px;
+}
+
+.text-caption-medium {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 16px;
+}
+
+.text-price {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 22px;
+  font-family: 'SF Mono', Monaco, Inconsolata, 'Roboto Mono', 'Source Code Pro', monospace;
+}

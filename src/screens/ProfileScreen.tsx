@@ -14,6 +14,7 @@ import { useAuth } from '../context/SimpleAuthContext';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../types/navigation';
+import { Typography } from '../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import LoadingOverlay from '../components/LoadingOverlay';
 
@@ -334,6 +335,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   avatarText: {
+    ...Typography.textStyles.h1,
     fontSize: 36,
     fontWeight: 'bold',
     color: '#fff',
@@ -355,13 +357,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   userName: {
+    ...Typography.textStyles.h2,
     fontSize: 24,
     fontWeight: 'bold',
     color: '#000',
     marginBottom: 4,
   },
   userEmail: {
-    fontSize: 16,
+    ...Typography.textStyles.body,
     color: '#8E8E93',
     marginBottom: 8,
   },
@@ -374,6 +377,7 @@ const styles = StyleSheet.create({
     marginVertical: 2,
   },
   metaText: {
+    ...Typography.textStyles.caption,
     fontSize: 14,
     color: '#8E8E93',
     marginLeft: 6,
@@ -391,12 +395,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statNumber: {
+    ...Typography.textStyles.h2,
     fontSize: 24,
     fontWeight: 'bold',
     color: '#000',
     marginBottom: 4,
   },
   statLabel: {
+    ...Typography.textStyles.caption,
     fontSize: 12,
     color: '#8E8E93',
     textAlign: 'center',
@@ -431,12 +437,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   menuTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    ...Typography.textStyles.bodyMedium,
     color: '#000',
     marginBottom: 2,
   },
   menuSubtitle: {
+    ...Typography.textStyles.caption,
     fontSize: 14,
     color: '#8E8E93',
   },
@@ -445,6 +451,7 @@ const styles = StyleSheet.create({
     marginVertical: 20,
   },
   appInfoText: {
+    ...Typography.textStyles.caption,
     fontSize: 12,
     color: '#8E8E93',
     marginVertical: 2,
@@ -467,8 +474,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   logoutButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
+    ...Typography.textStyles.bodyMedium,
     color: '#FF3B30',
     marginLeft: 8,
   },
@@ -493,6 +499,7 @@ const styles = StyleSheet.create({
     maxWidth: 320,
   },
   loginPromptTitle: {
+    ...Typography.textStyles.h2,
     fontSize: 24,
     fontWeight: 'bold',
     color: '#333',
@@ -501,11 +508,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   loginPromptSubtitle: {
-    fontSize: 16,
+    ...Typography.textStyles.body,
     color: '#666',
     textAlign: 'center',
     marginBottom: 30,
-    lineHeight: 22,
   },
   loginPromptButton: {
     backgroundColor: '#007AFF',
@@ -516,9 +522,8 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   loginPromptButtonText: {
+    ...Typography.textStyles.bodyMedium,
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
     textAlign: 'center',
   },
   registerPromptButton: {
@@ -531,9 +536,8 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   registerPromptButtonText: {
+    ...Typography.textStyles.bodyMedium,
     color: '#007AFF',
-    fontSize: 16,
-    fontWeight: '600',
     textAlign: 'center',
   },
 });

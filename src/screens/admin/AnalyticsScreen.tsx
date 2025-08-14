@@ -39,24 +39,37 @@ const AnalyticsScreen = () => {
       console.log('🔄 Loading analytics data...');
       setLoading(true);
       
-      const [statsData, revenueResponse, popularBikesData] = await Promise.all([
-        getDashboardStats(),
-        getRevenueData(selectedPeriod),
-        getPopularBikes(10)
-      ]);
-      
-      console.log('✅ Analytics data loaded:', {
-        stats: statsData,
-        revenue: revenueResponse.length + ' records',
-        popularBikes: popularBikesData.length + ' bikes'
-      });
+      // Load each data source separately with individual error handling
+      let statsData = null;
+      let revenueResponse: RevenueData[] = [];
+      let popularBikesData: PopularBike[] = [];
+
+      try {
+        statsData = await getDashboardStats();
+        console.log('✅ Dashboard stats loaded');
+      } catch (error) {
+        console.error('❌ Error loading dashboard stats:', error);
+      }
+
+      try {
+        revenueResponse = await getRevenueData(selectedPeriod);
+        console.log('✅ Revenue data loaded:', revenueResponse.length + ' records');
+      } catch (error) {
+        console.error('❌ Error loading revenue data:', error);
+      }
+
+      try {
+        popularBikesData = await getPopularBikes(10);
+        console.log('✅ Popular bikes loaded:', popularBikesData.length + ' bikes');
+      } catch (error) {
+        console.error('❌ Error loading popular bikes:', error);
+      }
       
       setStats(statsData);
       setRevenueData(revenueResponse);
       setPopularBikes(popularBikesData);
     } catch (error) {
-      console.error('❌ Error loading analytics data:', error);
-      console.error('❌ Error details:', JSON.stringify(error, null, 2));
+      console.error('❌ Unexpected error in loadAnalyticsData:', error);
       
       // Set empty states for failed data
       setStats(null);
@@ -90,17 +103,18 @@ const AnalyticsScreen = () => {
   };
 
   const getGrowthPercentage = () => {
-    if (revenueData.length < 7) return 0;
+    if (revenueData.length < 14) return 0;
     
-    const lastWeek = revenueData.slice(-7).reduce((sum, day) => sum + day.revenue, 0);
-    const previousWeek = revenueData.slice(-14, -7).reduce((sum, day) => sum + day.revenue, 0);
+    const lastWeek = revenueData.slice(-7).reduce((sum, day) => sum + (day.revenue || 0), 0);
+    const previousWeek = revenueData.slice(-14, -7).reduce((sum, day) => sum + (day.revenue || 0), 0);
     
-    if (previousWeek === 0) return 100;
+    if (previousWeek === 0) return lastWeek > 0 ? 100 : 0;
     return ((lastWeek - previousWeek) / previousWeek) * 100;
   };
 
   const getMaxRevenue = () => {
-    return Math.max(...revenueData.map(day => day.revenue));
+    if (revenueData.length === 0) return 0;
+    return Math.max(...revenueData.map(day => day.revenue), 0);
   };
 
   const StatCard = ({ title, value, icon, color, subtitle, growth }: {
@@ -138,6 +152,8 @@ const AnalyticsScreen = () => {
 
   const SimpleChart = ({ data }: { data: RevenueData[] }) => {
     const maxRevenue = getMaxRevenue();
+    const total = data.reduce((sum, day) => sum + (day.revenue || 0), 0);
+    const avg = data.length > 0 ? total / data.length : 0;
     
     return (
       <View style={styles.chartContainer}>
@@ -167,12 +183,50 @@ const AnalyticsScreen = () => {
         </View>
         <View style={styles.chartLegend}>
           <Text style={styles.legendText}>
-            Total: {formatCompactCurrency(data.reduce((sum, day) => sum + day.revenue, 0))}
+            Total: {formatCompactCurrency(total)}
           </Text>
           <Text style={styles.legendText}>
-            Avg: {formatCompactCurrency(data.reduce((sum, day) => sum + day.revenue, 0) / data.length)}
+            Avg: {formatCompactCurrency(avg)}
           </Text>
         </View>
+      </View>
+    );
+  };
+
+  const DailyBreakdown = ({ data }: { data: RevenueData[] }) => {
+    const withGrowth = data.map((d, idx) => {
+      const prev = idx > 0 ? data[idx - 1] : undefined;
+      const growth = prev && prev.revenue > 0 ? ((d.revenue - prev.revenue) / prev.revenue) * 100 : 0;
+      return { ...d, growth };
+    });
+
+    const bestDay = withGrowth.reduce((max, cur) => (cur.revenue > max.revenue ? cur : max), { date: '', revenue: 0, bookings: 0, growth: 0 } as any);
+    const total = withGrowth.reduce((s, d) => s + d.revenue, 0);
+    const avg = withGrowth.length ? total / withGrowth.length : 0;
+
+    return (
+      <View style={styles.dailyContainer}>
+        <View style={styles.dailySummaryRow}>
+          <View style={styles.summaryPill}><Text style={styles.summaryPillLabel}>Total</Text><Text style={styles.summaryPillValue}>{formatCompactCurrency(total)}</Text></View>
+          <View style={styles.summaryPill}><Text style={styles.summaryPillLabel}>Average</Text><Text style={styles.summaryPillValue}>{formatCompactCurrency(avg)}</Text></View>
+          <View style={styles.summaryPill}><Text style={styles.summaryPillLabel}>Best</Text><Text style={styles.summaryPillValue}>{formatCompactCurrency(bestDay.revenue)}</Text></View>
+        </View>
+
+        <View style={styles.dailyHeader}>
+          <Text style={[styles.dailyCell, styles.dailyCellDate]}>Date</Text>
+          <Text style={[styles.dailyCell, styles.dailyCellRight]}>Bookings</Text>
+          <Text style={[styles.dailyCell, styles.dailyCellRight]}>Revenue</Text>
+          <Text style={[styles.dailyCell, styles.dailyCellRight]}>Growth</Text>
+        </View>
+
+        {withGrowth.map((d) => (
+          <View key={d.date} style={styles.dailyRow}>
+            <Text style={[styles.dailyCell, styles.dailyCellDate]}>{new Date(d.date).toLocaleDateString('vi-VN')}</Text>
+            <Text style={[styles.dailyCell, styles.dailyCellRight]}>{d.bookings}</Text>
+            <Text style={[styles.dailyCell, styles.dailyCellRight]}>{formatCompactCurrency(d.revenue)}</Text>
+            <Text style={[styles.dailyCell, styles.dailyCellRight, { color: d.growth >= 0 ? '#27AE60' : '#E74C3C' }]}>{`${d.growth >= 0 ? '+' : ''}${d.growth.toFixed(1)}%`}</Text>
+          </View>
+        ))}
       </View>
     );
   };
@@ -180,30 +234,37 @@ const AnalyticsScreen = () => {
   const PopularBikesSection = () => (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Top Performing Bikes</Text>
-      {popularBikes.map((bike, index) => (
-        <View key={bike.id} style={styles.popularBikeItem}>
-          <View style={styles.rankContainer}>
-            <Text style={styles.rankText}>#{index + 1}</Text>
+      {popularBikes.length > 0 ? (
+        popularBikes.map((bike, index) => (
+          <View key={bike.id} style={styles.popularBikeItem}>
+            <View style={styles.rankContainer}>
+              <Text style={styles.rankText}>#{index + 1}</Text>
+            </View>
+            <View style={styles.bikeInfo}>
+              <Text style={styles.bikeModel}>{bike.model}</Text>
+              <Text style={styles.bikeStats}>
+                {bike.rentals} rentals • {formatCompactCurrency(bike.revenue)}
+              </Text>
+            </View>
+            <View style={styles.performanceBar}>
+              <View 
+                style={[
+                  styles.performanceBarFill,
+                  { 
+                    width: `${(bike.rentals / (popularBikes[0]?.rentals || 1)) * 100}%`,
+                    backgroundColor: index < 3 ? '#4ECDC4' : '#95A5A6'
+                  }
+                ]} 
+              />
+            </View>
           </View>
-          <View style={styles.bikeInfo}>
-            <Text style={styles.bikeModel}>{bike.model}</Text>
-            <Text style={styles.bikeStats}>
-              {bike.rentals} rentals • {formatCompactCurrency(bike.revenue)}
-            </Text>
-          </View>
-          <View style={styles.performanceBar}>
-            <View 
-              style={[
-                styles.performanceBarFill,
-                { 
-                  width: `${(bike.rentals / (popularBikes[0]?.rentals || 1)) * 100}%`,
-                  backgroundColor: index < 3 ? '#4ECDC4' : '#95A5A6'
-                }
-              ]} 
-            />
-          </View>
+        ))
+      ) : (
+        <View style={styles.emptyState}>
+          <Ionicons name="bicycle-outline" size={48} color="#ccc" />
+          <Text style={styles.emptyStateText}>No bike data available</Text>
         </View>
-      ))}
+      )}
     </View>
   );
 
@@ -283,8 +344,19 @@ const AnalyticsScreen = () => {
           </View>
 
           {/* Revenue Chart */}
-          {revenueData.length > 0 && (
-            <SimpleChart data={revenueData} />
+          {revenueData.length > 0 ? (
+            <>
+              <SimpleChart data={revenueData} />
+              <DailyBreakdown data={revenueData} />
+            </>
+          ) : (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Revenue Trend</Text>
+              <View style={styles.emptyState}>
+                <Ionicons name="analytics-outline" size={48} color="#ccc" />
+                <Text style={styles.emptyStateText}>No revenue data available</Text>
+              </View>
+            </View>
           )}
 
           {/* Booking Status Overview */}
@@ -340,7 +412,7 @@ const AnalyticsScreen = () => {
           </View>
 
           {/* Popular Bikes */}
-          {popularBikes.length > 0 && <PopularBikesSection />}
+          <PopularBikesSection />
 
           {/* Quick Insights */}
           <View style={styles.section}>
@@ -397,6 +469,46 @@ const styles = StyleSheet.create({
     color: '#2C3E50',
     marginBottom: 15,
   },
+  dailyContainer: {
+    backgroundColor: '#fff',
+    marginTop: 10,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+  },
+  dailySummaryRow: {
+    flexDirection: 'row',
+    gap: 10 as any,
+    marginVertical: 10,
+  },
+  summaryPill: {
+    backgroundColor: '#f5f7f9',
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    gap: 8 as any,
+  },
+  summaryPillLabel: { color: '#666' },
+  summaryPillValue: { color: '#2C3E50', fontWeight: '700' },
+  dailyHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#f8f9fa',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  dailyRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  dailyCell: { flex: 1, color: '#2C3E50' },
+  dailyCellDate: { flex: 1.6, fontWeight: '600' },
+  dailyCellRight: { textAlign: 'right' },
   periodSelector: {
     flexDirection: 'row',
     backgroundColor: '#f8f9fa',
@@ -634,6 +746,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     lineHeight: 20,
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    color: '#999',
+    marginTop: 10,
+    textAlign: 'center',
   },
 });
 

@@ -7,6 +7,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useTranslation } from 'react-i18next';
 
+// NativeWind CSS temporarily disabled
+
 // Import navigation types
 import { RootStackParamList, MainTabParamList } from './src/types/navigation';
 
@@ -15,6 +17,7 @@ import './src/i18n';
 
 // Import contexts
 import { AuthProvider, useAuth } from './src/context/SimpleAuthContext';
+import { ThemeProvider } from './src/contexts/ThemeContext';
 
 // Import screens
 import LoginScreen from './src/screens/auth/LoginScreen';
@@ -32,7 +35,7 @@ import LoadingScreen from './src/screens/LoadingScreen';
 
 // Import components
 import TabBarIcon from './src/components/TabBarIcon';
-import AuthStateDebug from './src/components/AuthStateDebug';
+import ErrorBoundary from './src/components/ErrorBoundary';
 
 const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -101,47 +104,53 @@ const MainTabs = () => {
 };
 
 const AppNavigator = () => {
-  const { isLoading } = useAuth();
+  const { isLoading, operationLoading, isAuthenticated, user } = useAuth();
 
-  if (isLoading) {
+  // Show loading screen while auth is initializing or during operations
+  if (isLoading || operationLoading) {
     return <LoadingScreen />;
   }
 
+  // Show login screen if not authenticated
+  if (!isAuthenticated || !user) {
+    return (
+      <NavigationContainer>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          <Stack.Screen 
+            name="Login" 
+            component={LoginScreen}
+            options={{ 
+              headerShown: true,
+              title: 'Đăng nhập',
+              headerTitleAlign: 'center',
+              gestureEnabled: false,
+              headerLeft: () => null,
+            }}
+          />
+          <Stack.Screen 
+            name="Register" 
+            component={RegisterScreen}
+            options={{ 
+              headerShown: true,
+              title: 'Đăng ký',
+              headerTitleAlign: 'center',
+              gestureEnabled: true,
+            }}
+          />
+        </Stack.Navigator>
+      </NavigationContainer>
+    );
+  }
+
+  // Show main app when authenticated
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {/* Main app screens - accessible without authentication */}
         <Stack.Screen name="MainTabs" component={MainTabs} />
         <Stack.Screen name="BikeDetail" component={BikeDetailScreen} />
         <Stack.Screen name="BookingDetail" component={BookingDetailScreen} />
         <Stack.Screen name="BookingDetailView" component={BookingDetailViewScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
-        
-        {/* Auth screens - shown when user needs to login */}
-        <Stack.Screen 
-          name="Login" 
-          component={LoginScreen}
-          options={{ 
-            presentation: 'modal',
-            headerShown: true,
-            title: 'Đăng nhập',
-            headerTitleAlign: 'center',
-            gestureEnabled: true,
-            headerLeft: () => null, // Remove back button to prevent navigation issues
-          }}
-        />
-        <Stack.Screen 
-          name="Register" 
-          component={RegisterScreen}
-          options={{ 
-            presentation: 'modal',
-            headerShown: true,
-            title: 'Đăng ký',
-            headerTitleAlign: 'center',
-            gestureEnabled: true,
-            headerLeft: () => null,
-          }}
-        />
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -151,11 +160,14 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <AuthProvider>
-          <AuthStateDebug />
-          <AppNavigator />
-          <StatusBar style="auto" />
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <ErrorBoundary>
+              <AppNavigator />
+            </ErrorBoundary>
+            <StatusBar style="auto" />
+          </AuthProvider>
+        </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

@@ -22,7 +22,8 @@ const LANGUAGE_DETECTOR = {
       }
       
       // If not, use device language
-      const deviceLanguage = Localization.locale.split('-')[0];
+      const locales = (Localization as any).getLocales ? (Localization as any).getLocales() : [];
+      const deviceLanguage = locales && locales.length > 0 ? locales[0].languageCode : 'en';
       return callback(deviceLanguage);
     } catch (error) {
       // Fallback to English

@@ -35,6 +35,11 @@
     "forgotPassword": "Forgot Password?",
     "phoneNumber": "Phone Number",
     "fullName": "Full Name",
+    "welcomeBack": "Welcome Back",
+    "createAccount": "Create New Account",
+    "or": "or",
+    "dontHaveAccount": "Don't have an account?",
+    "alreadyHaveAccount": "Already have an account?",
     "loginSuccess": "Login successful",
     "registerSuccess": "Registration successful",
     "autoLoggedIn": "You are now logged in!",
@@ -57,6 +62,7 @@
     "unknownError": "An unknown error occurred",
     "registrationFailed": "Registration failed",
     "loginFailed": "Login failed",
+    "loginTimeout": "Login timed out. Please check your connection and try again.",
     "emailConfirmationSent": "Registration successful! Please check your email to confirm your account before logging in."
   },
   "navigation": {

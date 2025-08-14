@@ -193,7 +193,7 @@ const BookingManagementScreen = () => {
   );
 
   const renderStatusFilters = () => (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterContainer}>
+    <View style={[styles.filterContainer, styles.filterRow]}>
       {['', 'pending', 'confirmed', 'active', 'completed', 'cancelled'].map(status => (
         <TouchableOpacity
           key={status}
@@ -202,6 +202,7 @@ const BookingManagementScreen = () => {
             statusFilter === status && styles.activeFilterButton
           ]}
           onPress={() => handleStatusFilter(status)}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <Text style={[
             styles.filterText,
@@ -211,7 +212,7 @@ const BookingManagementScreen = () => {
           </Text>
         </TouchableOpacity>
       ))}
-    </ScrollView>
+    </View>
   );
 
   const renderBookingModal = () => (
@@ -494,12 +495,20 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 15,
   },
+  filterRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10 as any,
+  },
   filterButton: {
     paddingHorizontal: 20,
     paddingVertical: 8,
     borderRadius: 20,
     backgroundColor: '#f8f9fa',
     marginRight: 10,
+    marginBottom: 10,
+    minWidth: 100,
+    alignItems: 'center',
   },
   activeFilterButton: {
     backgroundColor: '#4ECDC4',

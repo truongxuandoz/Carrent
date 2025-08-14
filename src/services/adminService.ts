@@ -17,19 +17,26 @@ export interface AdminDashboardStats {
 
 export interface BikeManagement {
   id: string;
+  name: string;
   model: string;
   brand: string;
   year: number;
+  type: string;
+  color: string;
   licensePlate: string;
-  status: 'available' | 'rented' | 'maintenance' | 'retired';
+  condition: 'available' | 'rented' | 'maintenance' | 'retired';
   pricePerDay: number;
+  pricePerHour: number;
   location: string;
+  address: string;
+  description: string;
   fuelType: string;
   transmission: string;
   engineCapacity: number;
+  deposit: number;
+  insurance: number;
   images: string[];
   features: string[];
-  condition: 'excellent' | 'good' | 'fair' | 'poor';
   lastMaintenance: string;
   nextMaintenance: string;
   totalRentals: number;
@@ -286,6 +293,23 @@ export const updateUserStatus = async (userId: string, status: 'active' | 'suspe
   }
 };
 
+export const updateUserRole = async (userId: string, role: 'customer' | 'admin'): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('users')
+      .update({ 
+        role,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', userId);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error updating user role:', error);
+    throw error;
+  }
+};
+
 // Bike Management
 export const getAllBikes = async (page = 1, limit = 20, status?: string): Promise<{
   bikes: BikeManagement[];
@@ -296,34 +320,52 @@ export const getAllBikes = async (page = 1, limit = 20, status?: string): Promis
     let query = supabase
       .from('bikes')
       .select(`
-        *,
-        bookings(count),
-        bookings!inner(total_amount)
-      `)
+        id, name, model, brand, year, type, color, license_plate, condition, price_per_day, price_per_hour, location, address, description, fuel_type, transmission, engine_capacity, deposit, insurance, features, images, last_maintenance, next_maintenance, created_at, updated_at,
+        bookings(total_amount)
+      `, { count: 'exact' })
       .order('created_at', { ascending: false })
       .range((page - 1) * limit, page * limit - 1);
 
     if (status) {
-      query = query.eq('status', status);
+      query = query.eq('condition', status);
     }
 
     const { data, error, count } = await query;
 
     if (error) throw error;
 
-    const bikes: BikeManagement[] = data?.map(bike => ({
-      ...bike,
-      licensePlate: bike.license_plate,
-      pricePerDay: bike.price_per_day,
-      fuelType: bike.fuel_type,
-      engineCapacity: bike.engine_capacity,
-      lastMaintenance: bike.last_maintenance,
-      nextMaintenance: bike.next_maintenance,
-      totalRentals: bike.bookings?.length || 0,
-      totalRevenue: bike.bookings?.reduce((sum: number, booking: any) => sum + (booking.total_amount || 0), 0) || 0,
-      createdAt: bike.created_at,
-      updatedAt: bike.updated_at,
-    })) || [];
+    const bikes: BikeManagement[] = (data || []).map((bike: any) => {
+      const bookings = Array.isArray(bike.bookings) ? bike.bookings : [];
+      return {
+        id: bike.id,
+        name: bike.name || `${bike.brand} ${bike.model}`,
+        model: bike.model,
+        brand: bike.brand,
+        year: bike.year,
+        type: bike.type || 'scooter',
+        color: bike.color || '',
+        licensePlate: bike.license_plate,
+        condition: bike.condition,
+        pricePerDay: bike.price_per_day,
+        pricePerHour: bike.price_per_hour || 0,
+        location: bike.location,
+        address: bike.address || bike.location || '',
+        description: bike.description || '',
+        fuelType: bike.fuel_type,
+        transmission: bike.transmission,
+        engineCapacity: bike.engine_capacity,
+        deposit: bike.deposit || 0,
+        insurance: bike.insurance || 0,
+        features: bike.features || [],
+        images: bike.images || [],
+        lastMaintenance: bike.last_maintenance,
+        nextMaintenance: bike.next_maintenance,
+        totalRentals: bookings.length,
+        totalRevenue: bookings.reduce((sum: number, b: any) => sum + (b.total_amount || 0), 0),
+        createdAt: bike.created_at,
+        updatedAt: bike.updated_at,
+      } as BikeManagement;
+    });
 
     return {
       bikes,
@@ -345,14 +387,13 @@ export const createBike = async (bikeData: Omit<BikeManagement, 'id' | 'totalRen
         brand: bikeData.brand,
         year: bikeData.year,
         license_plate: bikeData.licensePlate,
-        status: bikeData.status,
+        condition: bikeData.condition,
         price_per_day: bikeData.pricePerDay,
         location: bikeData.location,
         fuel_type: bikeData.fuelType,
         transmission: bikeData.transmission,
         engine_capacity: bikeData.engineCapacity,
         features: bikeData.features,
-        condition: bikeData.condition,
         images: bikeData.images,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -364,18 +405,25 @@ export const createBike = async (bikeData: Omit<BikeManagement, 'id' | 'totalRen
 
     return {
       id: data.id,
+      name: data.name || `${data.brand} ${data.model}`,
       model: data.model,
       brand: data.brand,
       year: data.year,
+      type: data.type || 'scooter',
+      color: data.color || '',
       licensePlate: data.license_plate,
-      status: data.status,
+      condition: data.condition,
       pricePerDay: data.price_per_day,
+      pricePerHour: data.price_per_hour || 0,
       location: data.location,
+      address: data.address || data.location || '',
+      description: data.description || '',
       fuelType: data.fuel_type,
       transmission: data.transmission,
       engineCapacity: data.engine_capacity,
+      deposit: data.deposit || 0,
+      insurance: data.insurance || 0,
       features: data.features,
-      condition: data.condition,
       images: data.images,
       lastMaintenance: data.last_maintenance,
       nextMaintenance: data.next_maintenance,
@@ -401,7 +449,7 @@ export const updateBike = async (bikeId: string, bikeData: Partial<BikeManagemen
     if (bikeData.brand) updateData.brand = bikeData.brand;
     if (bikeData.year) updateData.year = bikeData.year;
     if (bikeData.licensePlate) updateData.license_plate = bikeData.licensePlate;
-    if (bikeData.status) updateData.status = bikeData.status;
+    if (bikeData.condition) updateData.condition = bikeData.condition;
     if (bikeData.pricePerDay) updateData.price_per_day = bikeData.pricePerDay;
     if (bikeData.location) updateData.location = bikeData.location;
     if (bikeData.fuelType) updateData.fuel_type = bikeData.fuelType;
@@ -558,27 +606,52 @@ export const getRevenueData = async (days = 30): Promise<RevenueData[]> => {
 
 export const getPopularBikes = async (limit = 10): Promise<PopularBike[]> => {
   try {
+    // First get bike rental counts and revenue using a proper join
     const { data, error } = await supabase
       .from('bikes')
       .select(`
         id,
         model,
-        bookings(count, total_amount)
-      `)
-      .order('bookings(count)', { ascending: false })
-      .limit(limit);
+        bookings!inner(total_amount, payment_status)
+      `);
 
     if (error) throw error;
 
-    return data?.map(bike => ({
-      id: bike.id,
-      model: bike.model,
-      rentals: bike.bookings?.[0]?.count || 0,
-      revenue: bike.bookings?.reduce((sum: number, booking: any) => sum + (booking.total_amount || 0), 0) || 0,
-    })) || [];
+    // Process the data to calculate rentals and revenue per bike
+    const bikeStats = new Map<string, { id: string; model: string; rentals: number; revenue: number }>();
+    
+    data?.forEach(bike => {
+      const key = bike.id;
+      if (!bikeStats.has(key)) {
+        bikeStats.set(key, {
+          id: bike.id,
+          model: bike.model,
+          rentals: 0,
+          revenue: 0
+        });
+      }
+      
+      const stats = bikeStats.get(key)!;
+      if (Array.isArray(bike.bookings)) {
+        bike.bookings.forEach((booking: any) => {
+          stats.rentals += 1;
+          if (booking.payment_status === 'paid') {
+            stats.revenue += booking.total_amount || 0;
+          }
+        });
+      }
+    });
+
+    // Convert to array and sort by rentals
+    const result = Array.from(bikeStats.values())
+      .sort((a, b) => b.rentals - a.rentals)
+      .slice(0, limit);
+
+    return result;
   } catch (error) {
     console.error('Error fetching popular bikes:', error);
-    throw error;
+    // Return empty array if there's an error instead of throwing
+    return [];
   }
 };
 

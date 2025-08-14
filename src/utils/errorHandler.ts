@@ -22,9 +22,9 @@ export const parseAuthError = (error: AuthError | Error | any): { message: strin
 
   // Invalid credentials
   if (errorMessage.includes('invalid login credentials') ||
-      errorMessage.includes('email not confirmed') ||
+      errorMessage.includes('invalid credentials') ||
       errorMessage.includes('invalid email or password') ||
-      errorCode === 'email_not_confirmed') {
+      errorCode === 'invalid_credentials') {
     return { message: 'Invalid email or password', key: 'auth.invalidCredentials' };
   }
 

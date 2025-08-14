@@ -19,16 +19,12 @@ export interface CreateBikeData {
   engineCapacity?: number;
   fuelType: 'gasoline' | 'electric';
   transmission: 'automatic' | 'manual';
+  condition: 'available' | 'rented' | 'maintenance' | 'retired';
   color: string;
   licensePlate: string;
-  description?: string;
   images?: string[];
   pricePerDay: number;
-  pricePerHour: number;
-  deposit: number;
-  insurance?: number;
   location?: { lat: number; lng: number };
-  address?: string;
 }
 
 class BikeService {
@@ -41,8 +37,7 @@ class BikeService {
           *,
           owner:owner_id(id, full_name, phone_number)
         `)
-        .eq('is_available', true)
-        .eq('is_approved', true);
+        .eq('is_available', true);
 
       // Apply filters
       if (params?.type) {
@@ -132,19 +127,14 @@ class BikeService {
         engine_capacity: bikeData.engineCapacity,
         fuel_type: bikeData.fuelType,
         transmission: bikeData.transmission,
+        condition: bikeData.condition,
         color: bikeData.color,
         license_plate: bikeData.licensePlate,
-        description: bikeData.description,
         images: bikeData.images || [],
         price_per_day: bikeData.pricePerDay,
-        price_per_hour: bikeData.pricePerHour,
-        deposit: bikeData.deposit,
-        insurance: bikeData.insurance || 0,
         location: bikeData.location ? `POINT(${bikeData.location.lng} ${bikeData.location.lat})` : null,
-        address: bikeData.address,
-        owner_id: user.id,
-        is_available: true,
-        is_approved: false, // Requires admin approval
+        is_available: true
+        // Skip owner_id for now until user profile is properly created
       };
 
       const { data, error } = await supabase
@@ -178,18 +168,14 @@ class BikeService {
       if (bikeData.engineCapacity) updateData.engine_capacity = bikeData.engineCapacity;
       if (bikeData.fuelType) updateData.fuel_type = bikeData.fuelType;
       if (bikeData.transmission) updateData.transmission = bikeData.transmission;
+      if (bikeData.condition) updateData.condition = bikeData.condition;
       if (bikeData.color) updateData.color = bikeData.color;
       if (bikeData.licensePlate) updateData.license_plate = bikeData.licensePlate;
-      if (bikeData.description) updateData.description = bikeData.description;
       if (bikeData.images) updateData.images = bikeData.images;
       if (bikeData.pricePerDay) updateData.price_per_day = bikeData.pricePerDay;
-      if (bikeData.pricePerHour) updateData.price_per_hour = bikeData.pricePerHour;
-      if (bikeData.deposit) updateData.deposit = bikeData.deposit;
-      if (bikeData.insurance !== undefined) updateData.insurance = bikeData.insurance;
       if (bikeData.location) {
         updateData.location = `POINT(${bikeData.location.lng} ${bikeData.location.lat})`;
       }
-      if (bikeData.address) updateData.address = bikeData.address;
 
       const { data, error } = await supabase
         .from(TABLES.BIKES)
@@ -260,12 +246,63 @@ class BikeService {
     }
   }
 
-  // Admin: Approve/reject bike
-  async updateBikeStatus(bikeId: string, isApproved: boolean) {
+  // Admin: Create new bike (auto-approved)
+  async createBikeForAdmin(bikeData: CreateBikeData) {
+    try {
+      console.log('🔄 Creating new bike (Admin):', bikeData.name);
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        return { success: false, error: 'User not authenticated' };
+      }
+
+      const insertData = {
+        name: bikeData.name,
+        brand: bikeData.brand,
+        model: bikeData.model,
+        year: bikeData.year,
+        type: bikeData.type,
+        engine_capacity: bikeData.engineCapacity,
+        fuel_type: bikeData.fuelType,
+        transmission: bikeData.transmission,
+        condition: bikeData.condition,
+        color: bikeData.color,
+        license_plate: bikeData.licensePlate,
+        images: bikeData.images || [],
+        price_per_day: bikeData.pricePerDay,
+        location: bikeData.location ? `POINT(${bikeData.location.lng} ${bikeData.location.lat})` : null,
+        is_available: true,
+        is_approved: true, // Auto-approve bikes created by admin
+        rating: 0,
+        review_count: 0,
+        // Skip owner_id for now until user profile system is properly set up
+      };
+
+      const { data, error } = await supabase
+        .from(TABLES.BIKES)
+        .insert([insertData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('❌ Error creating bike (Admin):', error);
+        return { success: false, error: error.message };
+      }
+
+      console.log('✅ Bike created successfully by admin:', data.name);
+      return { success: true, data };
+    } catch (error) {
+      console.error('❌ Error in createBikeForAdmin:', error);
+      return { success: false, error: 'Failed to create bike' };
+    }
+  }
+
+  // Admin: Update bike availability (simplified - no approval needed)
+  async updateBikeStatus(bikeId: string, isAvailable: boolean) {
     try {
       const { data, error } = await supabase
         .from(TABLES.BIKES)
-        .update({ is_approved: isApproved })
+        .update({ is_available: isAvailable })
         .eq('id', bikeId)
         .select()
         .single();

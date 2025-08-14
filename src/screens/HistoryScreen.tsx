@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../types/navigation';
+import { getSafeImageSource } from '../utils/placeholderImage';
 
 type HistoryScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 
@@ -36,7 +37,7 @@ const HistoryScreen: React.FC = () => {
     {
       id: '1',
       bikeName: 'Honda Vision 2023',
-      bikeImage: 'https://via.placeholder.com/150',
+      bikeImage: getSafeImageSource(null, 'bike').uri,
       startDate: '2024-01-15',
       endDate: '2024-01-17',
       totalPrice: 450000,
@@ -47,7 +48,7 @@ const HistoryScreen: React.FC = () => {
     {
       id: '2',
       bikeName: 'Yamaha Grande Hybrid',
-      bikeImage: 'https://via.placeholder.com/150',
+      bikeImage: getSafeImageSource(null, 'bike').uri,
       startDate: '2024-01-20',
       endDate: '2024-01-22',
       totalPrice: 540000,
@@ -57,7 +58,7 @@ const HistoryScreen: React.FC = () => {
     {
       id: '3',
       bikeName: 'SYM Attila Elizabeth',
-      bikeImage: 'https://via.placeholder.com/150',
+      bikeImage: getSafeImageSource(null, 'bike').uri,
       startDate: '2024-01-10',
       endDate: '2024-01-12',
       totalPrice: 600000,
@@ -67,7 +68,7 @@ const HistoryScreen: React.FC = () => {
     {
       id: '4',
       bikeName: 'Honda Air Blade',
-      bikeImage: 'https://via.placeholder.com/150',
+      bikeImage: getSafeImageSource(null, 'bike').uri,
       startDate: '2024-01-05',
       endDate: '2024-01-07',
       totalPrice: 400000,

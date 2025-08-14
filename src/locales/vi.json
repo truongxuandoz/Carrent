@@ -35,6 +35,11 @@
     "forgotPassword": "Quên mật khẩu?",
     "phoneNumber": "Số điện thoại",
     "fullName": "Họ và tên",
+    "welcomeBack": "Chào mừng trở lại",
+    "createAccount": "Tạo tài khoản mới",
+    "or": "hoặc",
+    "dontHaveAccount": "Chưa có tài khoản?",
+    "alreadyHaveAccount": "Đã có tài khoản?",
     "loginSuccess": "Đăng nhập thành công",
     "registerSuccess": "Đăng ký thành công",
     "autoLoggedIn": "Bạn đã được đăng nhập!",
@@ -57,6 +62,7 @@
     "unknownError": "Có lỗi không xác định xảy ra",
     "registrationFailed": "Đăng ký thất bại",
     "loginFailed": "Đăng nhập thất bại",
+    "loginTimeout": "Đăng nhập quá thời gian. Vui lòng kiểm tra kết nối và thử lại.",
     "emailConfirmationSent": "Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản trước khi đăng nhập."
   },
   "navigation": {

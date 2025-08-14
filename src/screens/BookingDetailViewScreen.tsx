@@ -11,6 +11,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { getSafeImageSource } from '../utils/placeholderImage';
 
 interface BookingDetailViewParams {
   bookingId: string;
@@ -57,7 +58,7 @@ const BookingDetailViewScreen: React.FC = () => {
   const bookingDetail: BookingDetail = {
     id: bookingId,
     bikeName: 'Honda Vision 2023',
-    bikeImage: 'https://via.placeholder.com/300x200',
+    bikeImage: getSafeImageSource(null, 'bike').uri,
     bikeModel: 'Honda Vision 2023',
     licensePlate: '59H1-12345',
     startDate: '2024-01-15',

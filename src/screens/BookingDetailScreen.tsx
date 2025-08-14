@@ -12,6 +12,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { getSafeImageSource } from '../utils/placeholderImage';
 
 interface BookingParams {
   bikeId?: string;
@@ -40,7 +41,7 @@ const BookingDetailScreen: React.FC = () => {
     brand: 'Honda',
     pricePerDay: 150000,
     pricePerHour: 20000,
-    image: 'https://via.placeholder.com/150',
+    image: getSafeImageSource(null, 'bike').uri,
     deposit: 500000,
     insurance: 50000,
   };
